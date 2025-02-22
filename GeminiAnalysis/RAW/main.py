@@ -1,6 +1,9 @@
 from google import genai
 from PIL import Image
 import os
+from google.genai import types
+
+
 
 client = genai.Client(api_key="API_KEY_HERE")
 sys_instruct = """You are a boxing form analysis chatbot. You will receive punch type, 
@@ -22,6 +25,8 @@ userInput = "Analysis for " + punchType + " punch with a reaction time of " + re
 
 response = client.models.generate_content(
     model="gemini-2.0-flash",
+    config=types.GenerateContentConfig(
+        system_instruction=sys_instruct),
     contents=[image, userInput])
 
 print(response.text)
