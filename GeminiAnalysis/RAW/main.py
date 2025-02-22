@@ -15,11 +15,12 @@ sys_instruct = """You are a boxing form analysis chatbot. You will receive punch
                                     5. Suggestions for improvement
                                     6. Additional tips for training and practice"""
 
+# Following Code Below is PLACEHOLDER until real time data is obtained from simulation
 image_path = os.path.join(os.path.dirname(__file__), "img", "jab.jpg")
 image = Image.open(image_path)
-
 punchType = "jab"
 reactionTime = "0.5"
+# Following Code Above is PLACEHOLDER until real time data is obtained from simulation
 
 userInput = "Analysis for " + punchType + " punch with a reaction time of " + reactionTime + " seconds"
 
