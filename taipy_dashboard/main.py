@@ -13,7 +13,14 @@ accuracy_stats = compute_accuracy_stats(df)
 defense_stats = compute_defense_stats(df)
 dodge_stats = compute_dodge_stats(df)
 stance_plots = plot_stance(df)
-image_path = "/Users/shreyagarwal/Desktop/taipy/stance_0.png"
+
+
+def generate_stance_images(punch_type):
+    return "".join(
+        f'<taipy:image>{img_path}</taipy:image>'
+        for punch, img_path in stance_plots if punch == punch_type
+    )
+
 
 color_map_rt = {
     0.0: "green",
