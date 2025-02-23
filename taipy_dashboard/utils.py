@@ -46,7 +46,7 @@ def plot_stance(data: pd.DataFrame) -> list:
                 f"/Users/shreyagarwal/Desktop/taipy/images/stance_{index}.png", bbox_inches="tight")
             plt.close(fig)
             figures.append(
-                f"/Users/shreyagarwal/Desktop/taipy/images/stance_{index}.png")
+                (punch_type, f"/Users/shreyagarwal/Desktop/taipy/images/stance_{index}.png"))
 
         except Exception as e:
             print(e)
