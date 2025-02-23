@@ -8,19 +8,33 @@ from google import genai
 from google.genai import types
 import time
 import pandas as pd
+import torch
+import torch.nn as nn
 
 
 #Google Gemini declarations
 API_KEY= "AIzaSyBRkSPbu_9L2anGOae1yoybstpgNveWXgY"
 client = genai.Client(api_key=API_KEY)
 sys_instruct = """You are a boxing form analysis chatbot. You will receive punch type, 
-                                    reaction time of punch and an image of the punch. Based on this input provide the following info in a concise easy to read paragraph:
-                                    1. Stance evaluation
-                                    2. Punch technique analysis
-                                    3. Detailed breakdown of deviations in stance and punch
-                                    4. Comparison to professional boxing standards
-                                    5. Suggestions for improvement
-                                    6. Additional tips for training and practice"""
+                                    reaction time of punch and an image of the punch. Provide a detailed
+                                    paragraph overview of feedback on the athlete's form and technique. Do not include any form of formatting or fancy text. Make it straight up words in a paragraph."""
+
+
+class PunchClassifier(nn.Module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super(PunchClassifier, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size, num_classes)
+    def forward(self, x):
+         x = self.fc1(x)
+         x = self.relu(x)
+         x = self.fc2(x)
+         return x
+
+loaded_model = PunchClassifier(16, 32, 3)
+loaded_model.load_state_dict(torch.load('home/punch_classifier.pth'))
+loaded_model.eval()
 
 mp_pose = mp.solutions.pose
 pose = mp_pose.Pose()
@@ -160,11 +174,11 @@ def gen_frames():
     global total_time, hits, body_def_time, head_def_time, left_hit, right_hit, \
         jab_attempts, hook_attempts, uppercut_attempts, circles, actions, startTime, \
         obstacle, last_obstacle_time, current_wrist_path, current_elbow_path, handUsed, \
-        punchType, handsUsed, wrist_paths, elbow_paths, stances, reaction_times, obstacle_direction, send_image
+        punchType, handsUsed, wrist_paths, elbow_paths, stances, reaction_times, obstacle_direction, send_image, uppercut_hits, hook_hits, jab_hits
     # Initialize MediaPipe Pose detection
     with mp_pose.Pose(min_detection_confidence=0.5,
                       min_tracking_confidence=0.5) as pose:
-        while total_time < 660:
+        while total_time < 100:
             success, frame = cap.read()
             if not success:
                 break
@@ -332,6 +346,38 @@ def gen_frames():
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
+    for i in range(len(wrist_paths)):
+        if len(wrist_paths[i]) >= 4 or i < len(wrist_paths) - 1:
+            last_4_frames_wrists = wrist_paths[i][-4:]
+            last_4_frames_elbows = elbow_paths[i][-4:]
+
+            # Wrist data
+            x_vals_wrists = np.array([pos[handsUsed[i]][0] for pos in last_4_frames_wrists])
+            y_vals_wrists = np.array([pos[handsUsed[i]][1] for pos in last_4_frames_wrists])
+
+            # Elbow data
+            x_vals_elbows = np.array([pos[handsUsed[i]][0] for pos in last_4_frames_elbows])
+            y_vals_elbows = np.array([pos[handsUsed[i]][1] for pos in last_4_frames_elbows])
+
+            temp = np.concatenate((x_vals_wrists, y_vals_wrists))
+            temp = np.concatenate((temp, x_vals_elbows, y_vals_elbows))
+            sample = torch.tensor(temp, dtype=torch.float32)
+            prediction = loaded_model(sample)
+            classes = ['hook', 'uppercut', 'jab']
+            if len(temp) == 16:
+                predicted_punch = (torch.argmax(prediction).item())
+
+                if predicted_punch == 0 and actions[i] == "hook":
+                    print("hit")
+                    hook_hits = hook_hits + 1
+                elif predicted_punch == 2 and actions[i] == "jab":
+                    print("hit")
+                    jab_hits = jab_hits + 1
+                elif predicted_punch == 1 and actions[i] == "uppercut":
+                    print("hit")
+                    uppercut_hits = uppercut_hits + 1
+
+
 
 
 # Create your views here.
@@ -359,14 +405,14 @@ def dashboard(request):
     }
     df = pd.DataFrame(data)
     df.to_csv("home/csvfiles/output.csv", index=False)
-    userInput = "Analysis!"
+    userInput = "Provide a paragraph analysis for " + str(reaction_times[-1][1]) + " punch with a reaction time of " + str(reaction_times[-1][0]) + " seconds"
 
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         config=types.GenerateContentConfig(
             system_instruction=sys_instruct
         ),
-        contents=[userInput])
+        contents=[userInput + "\n\nImage: " + str(punchimage)])
 
     context = {
         "text": response.text,
