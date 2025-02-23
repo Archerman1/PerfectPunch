@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import ast
-import io
-import base64
+from matplotlib.lines import Line2D
 
 vector_pairs = [
     (11, 12), (11, 13), (13, 15),
@@ -11,6 +10,12 @@ vector_pairs = [
     (11, 23), (12, 24), (23, 25),
     (25, 27), (24, 26), (26, 28)
 ]
+
+professional_stances = {
+    "jab": [(242, 95), (248, 87), (250, 87), (252, 87), (241, 84), (237, 82), (233, 80), (248, 85), (221, 73), (239, 102), (231, 98), (243, 104), (173, 93), (222, 110), (123, 106), (217, 111), (150, 110), (217, 110), (160, 107), (220, 112), (162, 102), (219, 112), (161, 108), (203, 208), (156, 205), (232, 305), (131, 306), (209, 388), (120, 351), (196, 401), (121, 354), (233, 427), (111, 394)],
+    "hook": [(203, 232), (209, 217), (214, 216), (219, 216), (193, 215), (184, 213), (176, 212), (222, 220), (158, 215), (208, 251), (188, 249), (253, 292), (104, 276), (289, 401), (58, 377), (247, 298), (145, 348), (239, 272), (171, 336), (234, 259), (172, 314), (233, 267), (168, 320), (203, 515), (121, 504), (214, 672), (84, 622), (239, 821), (119, 667), (251, 851), (137, 680), (193, 866), (72, 712)],
+    "uppercut": [(375, 155), (375, 141), (377, 140), (380, 139), (363, 142), (356, 141), (350, 140), (375, 139), (334, 142), (378, 170), (361, 171), (410, 196), (282, 226), (477, 255), (334, 324), (417, 179), (357, 205), (406, 158), (357, 177), (399, 154), (347, 170), (398, 163), (347, 178), (414, 421), (331, 431), (432, 549), (297, 580), (429, 702), (281, 611), (428, 719), (284, 605), (409, 762), (261, 665)]
+}
 
 
 def plot_stance(data: pd.DataFrame) -> list:
@@ -21,26 +26,49 @@ def plot_stance(data: pd.DataFrame) -> list:
         try:
             punch_type, coord_list = ast.literal_eval(row["Stance"])
 
+            x_coords = []
+            y_coords = []
+
+            prof_coord_list = professional_stances.get(punch_type)
+            offset_x = prof_coord_list[0][0] - (coord_list[0][0]*500)
+            offset_y = prof_coord_list[0][1] - (coord_list[0][1]*700)
+
             fig, ax = plt.subplots()
             for start, end in vector_pairs:
                 if start < len(coord_list) and end < len(coord_list):
-                    x = [coord_list[start][0], coord_list[end][0]]
-                    y = [coord_list[start][1], coord_list[end][1]]
+                    x_coords.append(coord_list[start][0]*500+offset_x)
+                    x_coords.append(coord_list[end][0]*500+offset_x)
+                    y_coords.append(coord_list[start][1]*700+offset_y)
+                    y_coords.append(coord_list[end][1]*700+offset_y)
+                    x = [(coord_list[start][0])*500+offset_x,
+                         (coord_list[end][0])*500+offset_x]
+                    y = [(coord_list[start][1])*700+offset_y,
+                         (coord_list[end][1])*700+offset_y]
 
-                    ax.plot(x, y, color="black")
+                    ax.plot(x, y, color="red")
 
+            for start, end in vector_pairs:
+                if start < len(prof_coord_list) and end < len(prof_coord_list):
+                    x_coords.append(prof_coord_list[start][0])
+                    x_coords.append(prof_coord_list[end][0])
+                    y_coords.append(prof_coord_list[start][1])
+                    y_coords.append(prof_coord_list[end][1])
+                    x = [prof_coord_list[start][0], prof_coord_list[end][0]]
+                    y = [prof_coord_list[start][1], prof_coord_list[end][1]]
+
+                    ax.plot(x, y, color="blue")
+
+            print(x_coords)
             ax.set_xlabel("X Coordinate")
             ax.set_ylabel("Y Coordinate")
+            ax.set_xlim(min(x_coords) - 10, max(x_coords) + 10)
+            ax.set_ylim(min(y_coords) - 10, max(y_coords) + 10)
             ax.set_title(f"Stance for {punch_type}")
             ax.invert_yaxis()
             ax.grid(True)
-
-            # buf = io.BytesIO()
-            # plt.savefig(buf, format="png", bbox_inches="tight")
-            # plt.close(fig)
-            # buf.seek(0)
-            # img_base64 = base64.b64encode(buf.getvalue()).decode("utf-8")
-            # buf.close()
+            legend_elements = [Line2D([0], [0], color='red', lw=2, label='User'),
+                               Line2D([0], [0], color='blue', lw=2, label='Professional')]
+            ax.legend(handles=legend_elements)
 
             plt.savefig(
                 f"/Users/shreyagarwal/Desktop/taipy/images/stance_{index}.png", bbox_inches="tight")
