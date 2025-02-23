@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Statistics Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: white;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+        }
+
+        .attack, .defense {
+            padding: 20px;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        .attack {
+            width: 66.66%;
+            background-color: rgba(255, 0, 0, 0.2);
+            border: 2px solid red;
+        }
+
+        .defense {
+            width: 33.33%;
+            background-color: rgba(0, 0, 255, 0.2);
+            border: 2px solid blue;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        taipy-metric {
+            display: block;
+            margin: 10px auto;
+        }
+
+        /* Reaction Time Grid Layout - Flexbox for Containment */
+        .reaction-time-grid {
+            display: flex;
+            flex-wrap: wrap; /* Ensures wrapping */
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .reaction-time-grid p, .reaction-time-grid taipy-metric {
+            width: 45%; /* Ensures two per row */
+            min-width: 150px; /* Prevents overflow */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🥊 Boxing Statistics Dashboard</h1>
+
+    <div class="container">
+        <!-- Attack Section -->
+        <div class="attack">
+            <h2>🔥 Attack Statistics</h2>
+            <h3>⏱️ Reaction Time</h3>
+            <div class="reaction-time-grid">
+                <p>Average:</p>
+                <taipy:metric color_map="{color_map_rt}" format="%.2f s" min="0" max="{rt_stats[4]}" bar_color="black">{rt_stats[0]}</taipy:metric>
+                <p>Jab Average:</p>
+                <taipy:metric color_map="{color_map_rt}" format="%.2f s" min="0" max="{rt_stats[4]}" bar_color="black">{rt_stats[1]}</taipy:metric>
+                <p>Hook Average:</p>
+                <taipy:metric color_map="{color_map_rt}" format="%.2f s" min="0" max="{rt_stats[4]}" bar_color="black">{rt_stats[2]}</taipy:metric>
+                <p>Uppercut Average:</p>
+                <taipy:metric color_map="{color_map_rt}" format="%.2f s" min="0" max="{rt_stats[4]}" bar_color="black">{rt_stats[3]}</taipy:metric>
+            </div>
+
+            <h3>🎯 Accuracy</h3>
+            <p>Jabs:</p>
+            <taipy:indicator format="%.2f" value="{accuracy_stats[0]}" min="0" max="1">{accuracy_stats[0]}</taipy:indicator>
+            <p>Hooks:</p>
+            <taipy:indicator format="%.2f" value="{accuracy_stats[1]}" min="0" max="1">{accuracy_stats[1]}</taipy:indicator>
+            <p>Uppercuts:</p>
+            <taipy:indicator format="%.2f" value="{accuracy_stats[2]}" min="0" max="1">{accuracy_stats[2]}</taipy:indicator>
+        </div>
+
+        <!-- Defense Section -->
+        <div class="defense">
+            <h2>🛡️ Defense Statistics</h2>
+            <h3>Defense</h3>
+            <p>Defense efficiency based on opponent attacks:</p>
+            <!-- numbers only (help why can't i do this)-->
+            <taipy:text>Critical Hit Opportunities: {defense_stats[0]}</taipy:text>
+            <br></br>
+            <taipy:text>Rib Cage Hit Opportunities: {defense_stats[1]}</taipy:text>
+
+            <h3>🚶‍♂️ Dodge</h3>
+            <p>Left:</p>
+            <taipy:indicator format="%.2f" value="{dodge_stats[0]}" min="0" max="1">{dodge_stats[0]}</taipy:indicator>
+            <p>Right:</p>
+            <taipy:indicator format="%.2f" value="{dodge_stats[1]}" min="0" max="1">{dodge_stats[1]}</taipy:indicator>
+        </div>
+    </div>
+
+    <h2>📊 Stance Analysis</h2>
+    <p>Breakdown of stances used during fights:</p>
+    <taipy:image>{stance_plots[0]}</taipy:image>
+    <taipy:image>{stance_plots[1]}</taipy:image>
+    <taipy:image>{stance_plots[2]}</taipy:image>
+    <taipy:image>{stance_plots[3]}</taipy:image>
+    <taipy:image>{stance_plots[4]}</taipy:image>
+    <taipy:image>{stance_plots[5]}</taipy:image>
+    <taipy:image>{stance_plots[6]}</taipy:image>
+    <taipy:image>{stance_plots[7]}</taipy:image>
+    <taipy:image>{stance_plots[8]}</taipy:image>
+    <taipy:image>{stance_plots[9]}</taipy:image>
+
+</body>
+</html>
