@@ -1,0 +1,420 @@
+{#<!DOCTYPE html>#}
+{#<html lang="en">#}
+{#<head>#}
+{#    <meta charset="UTF-8">#}
+{#    <title>Title</title>#}
+{#    <style>#}
+{#        body {#}
+{#            font-family: Arial, sans-serif;#}
+{#            background: linear-gradient(135deg, #667eea, #764ba2);#}
+{#            display: flex;#}
+{#            justify-content: center;#}
+{#            align-items: center;#}
+{#            height: 100vh;#}
+{#            margin: 0;#}
+{#            color: white;#}
+{#        }#}
+{##}
+{#        .container {#}
+{#            text-align: center;#}
+{#            padding: 20px;#}
+{#            background: rgba(0, 0, 0, 0.3);#}
+{#            border-radius: 10px;#}
+{#        }#}
+{#        </style>#}
+{#</head>#}
+{#<h1> Results and Feedback </h1>#}
+{#<div>#}
+{#    <p> {{ response }} </p>#}
+{#</div>#}
+{#<body>#}
+{##}
+{#</body>#}
+{#</html>#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boxing Statistics Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        /* Modern CSS Reset and Variables */
+        :root {
+            --primary-bg: #121212;
+            --card-bg: #1e1e1e;
+            --attack-color: rgba(255, 99, 132, 0.2);
+            --attack-border: rgba(255, 99, 132, 1);
+            --defense-color: rgba(54, 162, 235, 0.2);
+            --defense-border: rgba(54, 162, 235, 1);
+            --text-primary: #ffffff;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --success-color: #4CAF50;
+            --warning-color: #FFC107;
+            --danger-color: #FF5252;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* General Styling */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, var(--attack-border), var(--defense-border));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        /* Section Styling */
+        .section {
+            width: 90%;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        .attack {
+            background-color: var(--attack-color);
+            border: 2px solid var(--attack-border);
+        }
+
+        .defense {
+            background-color: var(--defense-color);
+            border: 2px solid var(--defense-border);
+        }
+
+        /* Grid Layout */
+        .attack-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        /* Box Styling */
+        .attack-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .attack-box:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: scale(1.02);
+        }
+
+        /* Headers */
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Metrics and Indicators */
+        .metric-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .metric-fill {
+            height: 100%;
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 4px;
+        }
+
+        .indicator {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .indicator-fill {
+            height: 100%;
+            background: var(--success-color);
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 3px;
+        }
+
+        /* Stats Display */
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            color: var(--text-primary);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Canvas Styling */
+        .stance-canvas {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            margin: 1rem auto;
+            display: block;
+            max-width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+                width: 95%;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .attack-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🥊 Boxing Analytics Dashboard</h1>
+
+    <!-- Attack Section -->
+    <div class="section attack">
+        <h2>🔥 Attack Statistics</h2>
+        <div class="attack-grid">
+            <!-- Jab Box -->
+            <div class="attack-box">
+                <h3>Jab Analysis</h3>
+                <div class="stat-label">Reaction Time</div>
+                <div class="metric-bar">
+                    <div id="jab-rt" class="metric-fill"></div>
+                </div>
+                <div class="stat-label">Accuracy</div>
+                <div class="indicator">
+                    <div id="jab-accuracy" class="indicator-fill"></div>
+                </div>
+                <canvas id="jab-stance" class="stance-canvas" width="300" height="200"></canvas>
+            </div>
+
+            <!-- Hook Box -->
+            <div class="attack-box">
+                <h3>Hook Analysis</h3>
+                <div class="stat-label">Reaction Time</div>
+                <div class="metric-bar">
+                    <div id="hook-rt" class="metric-fill"></div>
+                </div>
+                <div class="stat-label">Accuracy</div>
+                <div class="indicator">
+                    <div id="hook-accuracy" class="indicator-fill"></div>
+                </div>
+                <canvas id="hook-stance" class="stance-canvas" width="300" height="200"></canvas>
+            </div>
+
+            <!-- Uppercut Box -->
+            <div class="attack-box">
+                <h3>Uppercut Analysis</h3>
+                <div class="stat-label">Reaction Time</div>
+                <div class="metric-bar">
+                    <div id="uppercut-rt" class="metric-fill"></div>
+                </div>
+                <div class="stat-label">Accuracy</div>
+                <div class="indicator">
+                    <div id="uppercut-accuracy" class="indicator-fill"></div>
+                </div>
+                <canvas id="uppercut-stance" class="stance-canvas" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Defense Section -->
+    <div class="section defense">
+        <h2>🛡️ Defense Analysis</h2>
+        <div class="attack-grid">
+            <div class="attack-box">
+                <h3>Defense Efficiency</h3>
+                <div class="stat-label">Critical Hit Opportunities</div>
+                <div class="stat-value" id="critical-hits">0</div>
+                <div class="stat-label">Rib Cage Hit Opportunities</div>
+                <div class="stat-value" id="rib-hits">0</div>
+            </div>
+
+            <div class="attack-box">
+                <h3>Dodge Performance</h3>
+                <div class="stat-label">Left Dodge Efficiency</div>
+                <div class="indicator">
+                    <div id="dodge-left" class="indicator-fill"></div>
+                </div>
+                <div class="stat-label">Right Dodge Efficiency</div>
+                <div class="indicator">
+                    <div id="dodge-right" class="indicator-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data structure remains the same
+        const data = {
+            reactionTime: {
+                jab: 0.75,
+                hook: 0.85,
+                uppercut: 0.95,
+                max: 2.0
+            },
+            accuracy: {
+                jab: 0.8,
+                hook: 0.7,
+                uppercut: 0.6
+            },
+            defense: {
+                criticalHits: 5,
+                ribHits: 8
+            },
+            dodge: {
+                left: 0.75,
+                right: 0.85
+            },
+            stanceData: {
+                jab: [[100, 50], [150, 100], [200, 50]],
+                hook: [[100, 100], [150, 150], [200, 100]],
+                uppercut: [[100, 150], [150, 200], [200, 150]]
+            }
+        };
+
+        function setReactionTimeBar(id, value, max) {
+            const element = document.getElementById(id);
+            const percentage = (value / max) * 100;
+            element.style.width = `${percentage}%`;
+
+            // Enhanced color gradient
+            let color;
+            if (percentage <= 33) {
+                color = 'linear-gradient(90deg, #4CAF50, #81C784)';
+            } else if (percentage <= 66) {
+                color = 'linear-gradient(90deg, #FFC107, #FFD54F)';
+            } else {
+                color = 'linear-gradient(90deg, #FF5252, #FF8A80)';
+            }
+
+            element.style.background = color;
+        }
+
+        function setAccuracyIndicator(id, value) {
+            const element = document.getElementById(id);
+            element.style.width = `${value * 100}%`;
+
+            // Add gradient effect based on performance
+            let gradient;
+            if (value >= 0.8) {
+                gradient = 'linear-gradient(90deg, #4CAF50, #81C784)';
+            } else if (value >= 0.6) {
+                gradient = 'linear-gradient(90deg, #FFC107, #FFD54F)';
+            } else {
+                gradient = 'linear-gradient(90deg, #FF5252, #FF8A80)';
+            }
+            element.style.background = gradient;
+        }
+
+        function drawStance(canvasId, coordinates) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+
+            // Enhanced styling
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            // Add shadow effect
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            ctx.shadowBlur = 10;
+
+            ctx.beginPath();
+            ctx.moveTo(coordinates[0][0], coordinates[0][1]);
+            for (let i = 1; i < coordinates.length; i++) {
+                ctx.lineTo(coordinates[i][0], coordinates[i][1]);
+            }
+            ctx.stroke();
+
+            // Draw points at vertices
+            coordinates.forEach(point => {
+                ctx.beginPath();
+                ctx.arc(point[0], point[1], 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+            });
+        }
+
+        function initializeDashboard() {
+            // Initialize all visualizations
+            setReactionTimeBar('jab-rt', data.reactionTime.jab, data.reactionTime.max);
+            setReactionTimeBar('hook-rt', data.reactionTime.hook, data.reactionTime.max);
+            setReactionTimeBar('uppercut-rt', data.reactionTime.uppercut, data.reactionTime.max);
+
+            setAccuracyIndicator('jab-accuracy', data.accuracy.jab);
+            setAccuracyIndicator('hook-accuracy', data.accuracy.hook);
+            setAccuracyIndicator('uppercut-accuracy', data.accuracy.uppercut);
+
+            document.getElementById('critical-hits').textContent = data.defense.criticalHits;
+            document.getElementById('rib-hits').textContent = data.defense.ribHits;
+
+            setAccuracyIndicator('dodge-left', data.dodge.left);
+            setAccuracyIndicator('dodge-right', data.dodge.right);
+
+            drawStance('jab-stance', data.stanceData.jab);
+            drawStance('hook-stance', data.stanceData.hook);
+            drawStance('uppercut-stance', data.stanceData.uppercut);
+        }
+
+        window.addEventListener('load', initializeDashboard);
+    </script>
+</body>
+</html>
