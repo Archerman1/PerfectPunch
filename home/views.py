@@ -10,10 +10,10 @@ import time
 import pandas as pd
 import torch
 import torch.nn as nn
-
+from home.utils import compute_rt_stats, plot_stance, compute_dodge_stats, compute_defense_stats, compute_accuracy_stats
 
 #Google Gemini declarations
-API_KEY= "AIzaSyBRkSPbu_9L2anGOae1yoybstpgNveWXgY"
+API_KEY= "PLACEHOLDER"
 client = genai.Client(api_key=API_KEY)
 sys_instruct = """You are a boxing form analysis chatbot. You will receive punch type, 
                                     reaction time of punch and an image of the punch. Provide a detailed
@@ -178,7 +178,7 @@ def gen_frames():
     # Initialize MediaPipe Pose detection
     with mp_pose.Pose(min_detection_confidence=0.5,
                       min_tracking_confidence=0.5) as pose:
-        while total_time < 100:
+        while total_time < 280:
             success, frame = cap.read()
             if not success:
                 break
@@ -404,7 +404,9 @@ def dashboard(request):
         "Stance": pd.Series(stances)
     }
     df = pd.DataFrame(data)
+    print(df.head())
     df.to_csv("home/csvfiles/output.csv", index=False)
+    data = pd.read_csv("home/csvfiles/output.csv")
     userInput = "Provide a paragraph analysis for " + str(reaction_times[-1][1]) + " punch with a reaction time of " + str(reaction_times[-1][0]) + " seconds"
 
     response = client.models.generate_content(
@@ -414,8 +416,33 @@ def dashboard(request):
         ),
         contents=[userInput + "\n\nImage: " + str(punchimage)])
 
+    rt_stats = compute_rt_stats(data)
+    accuracy_stats = compute_accuracy_stats(data)
+    defense_stats = compute_defense_stats(data)
+    dodge_stats = compute_dodge_stats(data)
+    stance_plots = plot_stance(data)
+
+    color_map_rt = {
+        0.0: "green",
+        (rt_stats[4]/3): "yellow",
+        (rt_stats[4]*2/3): "red"
+    }
+
     context = {
         "text": response.text,
+        "jab_reaction_time": rt_stats[0],
+        "hook_reaction_time": rt_stats[1],
+        "uppercut_reaction_time": rt_stats[2],
+        "max_reaction_time": rt_stats[3],
+        "jab_accuracy": accuracy_stats[0],
+        "hook_accuracy": accuracy_stats[1],
+        "uppercut_accuracy": accuracy_stats[2],
+        "concussion_ops": defense_stats[0],
+        "rib_cage_ops": defense_stats[1],
+        "dodge_left_accuracy": dodge_stats[0],
+        "dodge_right_accuracy": dodge_stats[1],
+        "stance_list": stance_plots
+
     }
 
     return render(request,'home/dashboard.html', context)

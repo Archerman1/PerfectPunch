@@ -33,6 +33,7 @@
 {#</html>#}
 <!DOCTYPE html>
 <html lang="en">
+{% load static %}
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -232,43 +233,42 @@
             <!-- Jab Box -->
             <div class="attack-box">
                 <h3>Jab Analysis</h3>
-                <div class="stat-label">Reaction Time</div>
+                <div class="stat-label">Reaction Time: {{ jab_reaction_time }}</div>
                 <div class="metric-bar">
                     <div id="jab-rt" class="metric-fill"></div>
                 </div>
-                <div class="stat-label">Accuracy</div>
+                <div class="stat-label">Accuracy {{ jab_accuracy }}</div>
                 <div class="indicator">
                     <div id="jab-accuracy" class="indicator-fill"></div>
                 </div>
-                <canvas id="jab-stance" class="stance-canvas" width="300" height="200"></canvas>
+                <div id="jab-carousel-container"></div>
             </div>
 
             <!-- Hook Box -->
             <div class="attack-box">
                 <h3>Hook Analysis</h3>
-                <div class="stat-label">Reaction Time</div>
+                <div class="stat-label">Reaction Time: {{ hook_reaction_time }}</div>
                 <div class="metric-bar">
                     <div id="hook-rt" class="metric-fill"></div>
                 </div>
-                <div class="stat-label">Accuracy</div>
+                <div class="stat-label">Accuracy {{ hook_accuracy }}</div>
                 <div class="indicator">
                     <div id="hook-accuracy" class="indicator-fill"></div>
                 </div>
-                <canvas id="hook-stance" class="stance-canvas" width="300" height="200"></canvas>
+                <div id="hook-carousel-container"></div>
             </div>
 
             <!-- Uppercut Box -->
             <div class="attack-box">
                 <h3>Uppercut Analysis</h3>
-                <div class="stat-label">Reaction Time</div>
+                <div class="stat-label">Reaction Time: {{ uppercut_reaction_time }}</div>
                 <div class="metric-bar">
                     <div id="uppercut-rt" class="metric-fill"></div>
                 </div>
-                <div class="stat-label">Accuracy</div>
+                <div class="stat-label">Accuracy: {{ uppercut_accuracy }}</div>
                 <div class="indicator">
                     <div id="uppercut-accuracy" class="indicator-fill"></div>
                 </div>
-                <canvas id="uppercut-stance" class="stance-canvas" width="300" height="200"></canvas>
             </div>
         </div>
     </div>
@@ -287,11 +287,11 @@
 
             <div class="attack-box">
                 <h3>Dodge Performance</h3>
-                <div class="stat-label">Left Dodge Efficiency</div>
+                <div class="stat-label">Left Dodge Efficiency: {{ dodge_left_accuracy }}</div>
                 <div class="indicator">
                     <div id="dodge-left" class="indicator-fill"></div>
                 </div>
-                <div class="stat-label">Right Dodge Efficiency</div>
+                <div class="stat-label">Right Dodge Efficiency: {{ dodge_right_accuracy }}</div>
                 <div class="indicator">
                     <div id="dodge-right" class="indicator-fill"></div>
                 </div>
@@ -305,32 +305,41 @@
     </div>
 
     <script>
+
+        const stanceData = {
+            {% regroup stance_list by type as stance_groups %}
+            {% for group in stance_groups %}
+                "{{ group.grouper }}": [
+                    {% for item in group.list %}
+                        "{{ item.1 }}"{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                ]{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        };
+
+        console.log(stanceData)
         // Sample data structure remains the same
         const data = {
             reactionTime: {
-                jab: 0.75,
-                hook: 0.85,
-                uppercut: 0.95,
-                max: 2.0
+                jab: {{ jab_reaction_time }},
+                hook: {{ hook_reaction_time }},
+                uppercut: {{ uppercut_reaction_time }},
+                max: {{ max_reaction_time }}
             },
             accuracy: {
-                jab: 0.8,
-                hook: 0.7,
-                uppercut: 0.6
+                jab: {{ jab_accuracy }},
+                hook: {{ hook_accuracy }},
+                uppercut: {{ uppercut_accuracy }}
             },
             defense: {
-                criticalHits: 5,
-                ribHits: 8
+                criticalHits: {{ concussion_ops }},
+                ribHits: {{ rib_cage_ops }}
             },
             dodge: {
-                left: 0.75,
-                right: 0.85
+                left: {{ dodge_left_accuracy }},
+                right: {{ dodge_right_accuracy }}
             },
-            stanceData: {
-                jab: [[100, 50], [150, 100], [200, 50]],
-                hook: [[100, 100], [150, 150], [200, 100]],
-                uppercut: [[100, 150], [150, 200], [200, 150]]
-            }
+            stanceData: stanceData
         };
 
         function setReactionTimeBar(id, value, max) {
@@ -398,8 +407,34 @@
             });
         }
 
+            function createCarousel(punchType, images) {
+                const carouselId = punchType + "Carousel";
+                let html = `<div id="${carouselId}" class="carousel slide" data-ride="carousel">
+                                <div class="carousel-inner">`;
+                console.log("fsduifsnfkjsdnf")
+                images.forEach((img, index) => {
+                    console.log(img)
+                    console.log(index)
+                    img = "home/" + img
+                    html += `<div class="carousel-item ${index === 0 ? 'active' : ''}">
+                          <img src="home/templates/stance_9.png" class="d-block w-100" alt=" stance image">
+                             </div>`;
+                });
+                html += `</div>
+                         <a class="carousel-control-prev" href="#${carouselId}" role="button" data-slide="prev">
+                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                             <span class="sr-only">Previous</span>
+                         </a>
+                         <a class="carousel-control-next" href="#${carouselId}" role="button" data-slide="next">
+                             <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                             <span class="sr-only">Next</span>
+                         </a>
+                     </div>`;
+                return html;
+            }
+
         function initializeDashboard() {
-            // Initialize all visualizations
+            // Existing functions to initialize bars and indicators.
             setReactionTimeBar('jab-rt', data.reactionTime.jab, data.reactionTime.max);
             setReactionTimeBar('hook-rt', data.reactionTime.hook, data.reactionTime.max);
             setReactionTimeBar('uppercut-rt', data.reactionTime.uppercut, data.reactionTime.max);
@@ -414,9 +449,16 @@
             setAccuracyIndicator('dodge-left', data.dodge.left);
             setAccuracyIndicator('dodge-right', data.dodge.right);
 
-            drawStance('jab-stance', data.stanceData.jab);
-            drawStance('hook-stance', data.stanceData.hook);
-            drawStance('uppercut-stance', data.stanceData.uppercut);
+            // Create and inject carousels based on stanceData.
+            if (data.stanceData.jab) {
+                document.getElementById("jab-carousel-container").innerHTML = createCarousel("jab", data.stanceData.jab);
+            }
+            if (data.stanceData.hook) {
+                document.getElementById("hook-carousel-container").innerHTML = createCarousel("hook", data.stanceData.hook);
+            }
+            if (data.stanceData.uppercut) {
+                document.getElementById("uppercut-carousel-container").innerHTML = createCarousel("uppercut", data.stanceData.uppercut);
+            }
         }
 
         window.addEventListener('load', initializeDashboard);
